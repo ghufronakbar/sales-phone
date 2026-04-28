@@ -26,9 +26,10 @@ export default async function WorkerListPage({ searchParams }: WorkerListPagePro
   const params = await searchParams;
 
   const search = params.search || undefined;
-  const status = ["ACTIVE", "INACTIVE"].includes(params.status || "")
-    ? params.status
-    : "ALL";
+  const status =
+    params.status === "ACTIVE" || params.status === "INACTIVE"
+      ? params.status
+      : "ALL";
   const isActive =
     status === "ACTIVE" ? true : status === "INACTIVE" ? false : undefined;
   const sortBy = VALID_SORT_BY.includes(params.sortBy as (typeof VALID_SORT_BY)[number])

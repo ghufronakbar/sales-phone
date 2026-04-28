@@ -11,7 +11,7 @@ interface UserDetailPageProps {
 export default async function UserDetailPage({ params }: UserDetailPageProps) {
   const resolvedParams = await params;
   const idRaw = parseInt(resolvedParams.id, 10);
-  
+
   if (isNaN(idRaw)) {
     notFound();
   }
@@ -31,7 +31,7 @@ export default async function UserDetailPage({ params }: UserDetailPageProps) {
         <h1 className="text-sm font-semibold">User / Profil</h1>
       </header>
 
-      <div className="p-4 md:p-6 max-w-6xl mx-auto">
+      <div className="p-4 md:p-6 max-w-6xl mx-auto w-full">
         <div className="mb-6">
           <h2 className="text-2xl font-bold tracking-tight">Detail User: {user.name}</h2>
           <p className="text-muted-foreground text-sm mt-1">

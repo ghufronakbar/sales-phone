@@ -625,3 +625,147 @@ export async function getWorkerReport(
     return { success: false, error: "Gagal mengambil laporan worker." };
   }
 }
+// ============================================================
+// DASHBOARD SUMMARY
+// ============================================================
+
+export interface DashboardSummaryData {
+  unit: {
+    available: number;
+    soldThisMonth: number;
+    pendapatanThisMonth: number;
+    keuntunganThisMonth: number;
+  };
+  accessory: {
+    terjualThisMonth: number;
+    pendapatanThisMonth: number;
+    keuntunganThisMonth: number;
+  };
+  customer: {
+    total: number;
+    newThisMonth: number;
+  };
+  worker: {
+    active: number;
+  };
+  cashflow: {
+    saldoAkhir: number;
+  };
+}
+
+export async function getDashboardSummary(): Promise<ActionResult<DashboardSummaryData>> {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    // 1. Unit
+    const [unitAvailable, soldUnitsThisMonth] = await Promise.all([
+      prisma.unit.count({ where: { deletedAt: null, status: "AVAILABLE" } }),
+      prisma.unit.findMany({
+        where: {
+          deletedAt: null,
+          status: "SOLD",
+          soldAt: { gte: startOfMonth, lte: endOfMonth },
+        },
+        select: { soldPrice: true, buyPrice: true, workerFee: true },
+      }),
+    ]);
+
+    let unitPendapatan = 0;
+    let unitKeuntungan = 0;
+    for (const u of soldUnitsThisMonth) {
+      const p = u.soldPrice ?? 0;
+      const b = u.buyPrice ?? 0;
+      const f = u.workerFee ?? 0;
+      unitPendapatan += p;
+      unitKeuntungan += (p - b - f);
+    }
+
+    // 2. Aksesoris
+    const accessorySalesThisMonth = await prisma.accessorySale.findMany({
+      where: {
+        deletedAt: null,
+        createdAt: { gte: startOfMonth, lte: endOfMonth },
+      },
+      select: {
+        totalPrice: true,
+        totalProfit: true,
+        items: { select: { quantity: true } },
+      },
+    });
+
+    let accTerjual = 0;
+    let accPendapatan = 0;
+    let accKeuntungan = 0;
+    for (const sale of accessorySalesThisMonth) {
+      accPendapatan += sale.totalPrice;
+      accKeuntungan += sale.totalProfit;
+      for (const item of sale.items) {
+        accTerjual += item.quantity;
+      }
+    }
+
+    // 3. Customer
+    const [totalCustomers, newCustomersThisMonth] = await Promise.all([
+      prisma.customer.count({ where: { deletedAt: null } }),
+      prisma.customer.count({
+        where: {
+          deletedAt: null,
+          createdAt: { gte: startOfMonth, lte: endOfMonth },
+        },
+      }),
+    ]);
+
+    // 4. Worker
+    const activeWorkers = await prisma.worker.count({
+      where: { deletedAt: null, isActive: true },
+    });
+
+    // 5. Cashflow Saldo Akhir
+    let saldoAkhir = 0;
+    const cashflowSums = await prisma.cashflow.groupBy({
+      by: ["type"],
+      where: { deletedAt: null },
+      _sum: { amount: true },
+    });
+    
+    for (const group of cashflowSums) {
+      if (group.type === "INCOME") {
+        saldoAkhir += group._sum.amount ?? 0;
+      } else if (group.type === "EXPENSE") {
+        saldoAkhir -= group._sum.amount ?? 0;
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        unit: {
+          available: unitAvailable,
+          soldThisMonth: soldUnitsThisMonth.length,
+          pendapatanThisMonth: unitPendapatan,
+          keuntunganThisMonth: unitKeuntungan,
+        },
+        accessory: {
+          terjualThisMonth: accTerjual,
+          pendapatanThisMonth: accPendapatan,
+          keuntunganThisMonth: accKeuntungan,
+        },
+        customer: {
+          total: totalCustomers,
+          newThisMonth: newCustomersThisMonth,
+        },
+        worker: {
+          active: activeWorkers,
+        },
+        cashflow: {
+          saldoAkhir,
+        },
+      },
+    };
+  } catch (error) {
+    console.error("getDashboardSummary error:", error);
+    return { success: false, error: "Gagal mengambil summary dashboard." };
+  }
+}

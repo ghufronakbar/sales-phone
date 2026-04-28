@@ -20,6 +20,24 @@ export type UserWithoutPassword = Prisma.UserGetPayload<{
   omit: { password: true };
 }>;
 
+interface GetUsersParams {
+  search?: string;
+  sortBy?: "createdAt" | "name";
+  sortOrder?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
+  dateRangeFrom?: string;
+  dateRangeTo?: string;
+}
+
+interface PaginatedUsers {
+  users: UserWithoutPassword[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 // ============================================================
 // READ
 // ============================================================
@@ -36,6 +54,76 @@ export async function getUsers(): Promise<ActionResult<UserWithoutPassword[]>> {
   } catch (error) {
     console.error("getUsers error:", error);
     return { success: false, error: "Gagal mengambil data user." };
+  }
+}
+
+export async function getUsersPaginated(
+  params: GetUsersParams = {},
+): Promise<ActionResult<PaginatedUsers>> {
+  try {
+    const {
+      search,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      page = 1,
+      pageSize = 10,
+      dateRangeFrom,
+      dateRangeTo,
+    } = params;
+
+    const where: Prisma.UserWhereInput = { deletedAt: null };
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { email: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    if (dateRangeFrom) {
+      const fromDate = new Date(dateRangeFrom);
+      if (!isNaN(fromDate.getTime())) {
+        const startOfDay = new Date(fromDate.setHours(0, 0, 0, 0));
+        let endOfDay = new Date(fromDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        if (dateRangeTo) {
+          const toDate = new Date(dateRangeTo);
+          if (!isNaN(toDate.getTime())) {
+            endOfDay = new Date(toDate.setHours(23, 59, 59, 999));
+          }
+        }
+
+        where.createdAt = {
+          gte: startOfDay,
+          lte: endOfDay,
+        };
+      }
+    }
+
+    const total = await prisma.user.count({ where });
+
+    const users = await prisma.user.findMany({
+      where,
+      orderBy: { [sortBy]: sortOrder },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      omit: { password: true },
+    });
+
+    return {
+      success: true,
+      data: {
+        users,
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
+  } catch (error) {
+    console.error("getUsersPaginated error:", error);
+    return { success: false, error: "Gagal mengambil data paginasi user." };
   }
 }
 

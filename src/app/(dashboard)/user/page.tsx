@@ -1,15 +1,51 @@
+import Link from "next/link";
+import { getUsersPaginated } from "@/actions/user";
+import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { getUsers } from "@/actions/user";
+import { Plus, UserCircle } from "lucide-react";
 import { UserListClient } from "./client";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import Link from "next/link";
-import { UserCircle } from "lucide-react";
+import { UserFilter, UserPagination } from "./filter";
 
-export default async function UserListPage() {
-  const result = await getUsers();
-  const users = result.data ?? [];
+const VALID_SORT_BY = ["createdAt", "name"] as const;
+
+interface UserListPageProps {
+  searchParams: Promise<{
+    search?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    page?: string;
+    pageSize?: string;
+    dateRangeFrom?: string;
+    dateRangeTo?: string;
+  }>;
+}
+
+export default async function UserListPage({ searchParams }: UserListPageProps) {
+  const params = await searchParams;
+
+  const search = params.search || undefined;
+  const sortBy = VALID_SORT_BY.includes(params.sortBy as (typeof VALID_SORT_BY)[number])
+    ? (params.sortBy as (typeof VALID_SORT_BY)[number])
+    : "createdAt";
+  const sortOrder = params.sortOrder === "asc" ? "asc" : "desc";
+  const page = Math.max(1, parseInt(params.page || "1", 10) || 1);
+  const pageSize = [5, 10, 25, 50].includes(parseInt(params.pageSize || "10", 10))
+    ? parseInt(params.pageSize || "10", 10)
+    : 10;
+  const dateRangeFrom = params.dateRangeFrom || undefined;
+  const dateRangeTo = params.dateRangeTo || undefined;
+
+  const result = await getUsersPaginated({
+    search,
+    sortBy,
+    sortOrder,
+    page,
+    pageSize,
+    dateRangeFrom,
+    dateRangeTo,
+  });
+  const data = result.data ?? { users: [], total: 0, page: 1, pageSize: 10, totalPages: 0 };
 
   return (
     <>
@@ -24,7 +60,8 @@ export default async function UserListPage() {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Daftar User</h2>
             <p className="text-muted-foreground text-sm mt-1">
-              Kelola akses staf dan karyawan ke dalam sistem.
+              Kelola akses staf dan karyawan ke dalam sistem.{" "}
+              <span className="font-medium">{data.total} user</span> ditemukan.
             </p>
           </div>
           <Button asChild>
@@ -35,15 +72,40 @@ export default async function UserListPage() {
           </Button>
         </div>
 
-        {users.length === 0 ? (
+        <div className="mb-4">
+          <UserFilter
+            search={search ?? ""}
+            sort={`${sortBy}-${sortOrder}`}
+            pageSize={pageSize.toString()}
+            dateRangeFrom={dateRangeFrom}
+            dateRangeTo={dateRangeTo}
+          />
+        </div>
+
+        {data.users.length === 0 ? (
           <div className="rounded-lg border bg-card p-12 text-center">
             <UserCircle className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground">
-              Belum ada data user selain akun default.
+              {search || dateRangeFrom
+                ? "Tidak ada user yang cocok dengan filter."
+                : "Belum ada data user selain akun default."}
             </p>
+            {!search && !dateRangeFrom && (
+              <Button asChild variant="outline" className="mt-4">
+                <Link href="/user/create">Tambah User</Link>
+              </Button>
+            )}
           </div>
         ) : (
-          <UserListClient users={users} />
+          <>
+            <UserListClient users={data.users} />
+            <UserPagination
+              page={data.page}
+              totalPages={data.totalPages}
+              total={data.total}
+              pageSize={data.pageSize}
+            />
+          </>
         )}
       </div>
     </>

@@ -93,9 +93,9 @@ export function UserDetailClient({ user }: Props) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div className="w-full gap-6 flex flex-col lg:flex-row">
       {/* Kolom Kiri: Form & Actions */}
-      <div className="space-y-6">
+      <div className="space-y-6 w-full md:w-1/2 lg:w-1/3">
         <Card>
           <form action={onUpdateProfile}>
             <CardHeader>
@@ -105,7 +105,7 @@ export function UserDetailClient({ user }: Props) {
               </CardTitle>
               <CardDescription>Update identitas user / email login.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 my-4">
               {errorProfile && (
                 <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
                   {errorProfile}
@@ -167,7 +167,7 @@ export function UserDetailClient({ user }: Props) {
         </Card>
 
         {/* Card Delete User */}
-        <Card className="border-red-200 dark:border-red-900/50">
+        <Card className="border-red-200 dark:border-red-900/50 ">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2 text-destructive">
               <Trash2 className="w-4 h-4" />
@@ -202,7 +202,7 @@ export function UserDetailClient({ user }: Props) {
       </div>
 
       {/* Kolom Kanan: Activity Logs */}
-      <Card className="lg:col-span-2 flex flex-col max-h-[85vh]">
+      <Card className="lg:col-span-2 flex flex-col max-h-[85vh] w-full md:w-1/2 lg:w-2/3">
         <CardHeader className="border-b pb-4">
           <CardTitle>Riwayat Aktivitas ({user.name})</CardTitle>
           <CardDescription>
@@ -227,7 +227,7 @@ export function UserDetailClient({ user }: Props) {
                 </TabsTrigger>
               </TabsList>
             </div>
-            
+
             <ScrollArea className="flex-1 p-6">
               {/* UNIT LOGS */}
               <TabsContent value="unit" className="m-0 space-y-4">
