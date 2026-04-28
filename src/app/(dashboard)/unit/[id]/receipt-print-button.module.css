@@ -1,0 +1,105 @@
+.root {
+  display: inline-flex;
+}
+
+.noPrint {
+  display: inline-flex;
+}
+
+.printArea {
+  display: none;
+}
+
+.receipt {
+  width: 58mm;
+  background: #ffffff;
+  color: #000000;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 10px;
+  line-height: 1.35;
+  padding: 2mm 1.5mm;
+}
+
+.center {
+  text-align: center;
+}
+
+.storeName {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.textMuted {
+  margin: 0.5mm 0;
+}
+
+.logo {
+  width: 22mm;
+  max-height: 14mm;
+  object-fit: contain;
+  margin-bottom: 1mm;
+}
+
+.divider {
+  border-top: 1px dashed #000000;
+  margin: 1.5mm 0;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 2mm;
+}
+
+.rowLabel {
+  white-space: nowrap;
+}
+
+.rowValue {
+  text-align: right;
+  word-break: break-word;
+}
+
+.itemName {
+  margin: 0;
+  font-weight: 700;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 2mm;
+}
+
+@media print {
+  @page {
+    size: 58mm auto;
+    margin: 2mm;
+  }
+
+  .noPrint {
+    display: none !important;
+  }
+
+  .printArea {
+    display: block;
+  }
+
+  :global(body *) {
+    visibility: hidden;
+  }
+
+  :global(#unit-receipt-print-area),
+  :global(#unit-receipt-print-area *) {
+    visibility: visible;
+  }
+
+  :global(#unit-receipt-print-area) {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 9999;
+    margin: 0;
+    padding: 0;
+  }
+}

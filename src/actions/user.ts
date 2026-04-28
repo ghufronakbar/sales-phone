@@ -1,0 +1,228 @@
+"use server";
+
+import { prisma } from "@/lib/prisma";
+import { revalidateTag } from "next/cache";
+import { CACHE_TAG } from "@/constants/cache-tag";
+import { hashPassword } from "@/lib/auth";
+import type { Prisma } from "@prisma/client";
+
+// ============================================================
+// Types
+// ============================================================
+
+interface ActionResult<T = undefined> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+export type UserWithoutPassword = Prisma.UserGetPayload<{
+  omit: { password: true };
+}>;
+
+// ============================================================
+// READ
+// ============================================================
+
+export async function getUsers(): Promise<ActionResult<UserWithoutPassword[]>> {
+  try {
+    const users = await prisma.user.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      omit: { password: true },
+    });
+
+    return { success: true, data: users };
+  } catch (error) {
+    console.error("getUsers error:", error);
+    return { success: false, error: "Gagal mengambil data user." };
+  }
+}
+
+export type UserDetailPayload = Prisma.UserGetPayload<{
+  omit: { password: true };
+  include: {
+    unitLogs: {
+      include: {
+        unit: { select: { id: true, name: true } };
+      };
+      orderBy: { createdAt: "desc" };
+    };
+    accessoryLogs: {
+      include: {
+        accessory: { select: { id: true, name: true } };
+      };
+      orderBy: { createdAt: "desc" };
+    };
+    blastMessages: {
+      include: {
+        _count: { select: { customers: true } };
+      };
+      orderBy: { createdAt: "desc" };
+    };
+    sendInvoiceHistories: {
+      include: {
+        customer: { select: { id: true, name: true } };
+      };
+      orderBy: { createdAt: "desc" };
+    };
+  };
+}>;
+
+export async function getUserById(id: number): Promise<ActionResult<UserDetailPayload | null>> {
+  try {
+    const user = await prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      omit: { password: true },
+      include: {
+        unitLogs: {
+          include: { unit: { select: { id: true, name: true } } },
+          orderBy: { createdAt: "desc" },
+        },
+        accessoryLogs: {
+          include: { accessory: { select: { id: true, name: true } } },
+          orderBy: { createdAt: "desc" },
+        },
+        blastMessages: {
+          include: { _count: { select: { customers: true } } },
+          orderBy: { createdAt: "desc" },
+        },
+        sendInvoiceHistories: {
+          include: { customer: { select: { id: true, name: true } } },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!user) return { success: true, data: null };
+
+    return { success: true, data: user };
+  } catch (error) {
+    console.error("getUserById error:", error);
+    return { success: false, error: "Gagal mengambil detail user." };
+  }
+}
+
+// ============================================================
+// CREATE
+// ============================================================
+
+interface CreateUserInput {
+  name: string;
+  email: string;
+  passwordRaw: string;
+}
+
+export async function createUser(input: CreateUserInput): Promise<ActionResult<UserWithoutPassword>> {
+  try {
+    const existing = await prisma.user.findUnique({
+      where: { email: input.email },
+    });
+    
+    // Walaupun soft delete, jika dia pernah create dengan email ini mungkin butuh penanganan
+    // Cek uniqueness
+    if (existing) {
+      if (existing.deletedAt) {
+        return { success: false, error: "Email sudah digunakan oleh user yang dihapus. Coba gunakan email lain." };
+      }
+      return { success: false, error: "Email sudah terdaftar." };
+    }
+
+    const hashedPassword = await hashPassword(input.passwordRaw);
+
+    const user = await prisma.user.create({
+      data: {
+        name: input.name,
+        email: input.email,
+        password: hashedPassword,
+      },
+      omit: { password: true },
+    });
+
+    revalidateTag(CACHE_TAG.USER);
+    
+    return { success: true, data: user };
+  } catch (error) {
+    console.error("createUser error:", error);
+    return { success: false, error: "Gagal membuat user baru." };
+  }
+}
+
+// ============================================================
+// UPDATE
+// ============================================================
+
+interface UpdateUserInput {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export async function updateUser(input: UpdateUserInput): Promise<ActionResult<UserWithoutPassword>> {
+  try {
+    const existing = await prisma.user.findUnique({
+      where: { email: input.email },
+    });
+    
+    if (existing && existing.id !== input.id) {
+      return { success: false, error: "Email sudah terdaftar oleh user lain." };
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: input.id },
+      data: {
+        name: input.name,
+        email: input.email,
+      },
+      omit: { password: true },
+    });
+
+    revalidateTag(CACHE_TAG.USER);
+
+    return { success: true, data: updated };
+  } catch (error) {
+    console.error("updateUser error:", error);
+    return { success: false, error: "Gagal mengupdate data user." };
+  }
+}
+
+export async function resetUserPassword(id: number): Promise<ActionResult> {
+  try {
+    const hashedPassword = await hashPassword("12345678");
+
+    await prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
+
+    revalidateTag(CACHE_TAG.USER);
+    return { success: true };
+  } catch (error) {
+    console.error("resetUserPassword error:", error);
+    return { success: false, error: "Gagal mereset password." };
+  }
+}
+
+// ============================================================
+// DELETE
+// ============================================================
+
+export async function deleteUser(id: number): Promise<ActionResult> {
+  try {
+    // Soft Delete to prevent cascading removal of unit & accessory logs
+    await prisma.user.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        // optional: mangle email to allow re-registration of the same email later
+        email: `deleted_${Date.now()}_${id}_@sales-phone.local`,
+      },
+    });
+
+    revalidateTag(CACHE_TAG.USER);
+    return { success: true };
+  } catch (error) {
+    console.error("deleteUser error:", error);
+    return { success: false, error: "Gagal menghapus user." };
+  }
+}
