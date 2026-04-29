@@ -97,7 +97,7 @@ const menuItems: MenuItem[] = [
     icon: Store,
   },
   {
-    title: "Cashflow",
+    title: "Arus Kas Operasional",
     url: "/cashflow",
     icon: Wallet,
   },

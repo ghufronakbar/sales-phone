@@ -38,6 +38,7 @@ export async function register(input: RegisterInput): Promise<ActionResult> {
         name: "Superadmin",
         email: input.email,
         password: hashedPassword,
+        isSuperAdmin: true,
       },
     });
 

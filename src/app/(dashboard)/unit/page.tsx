@@ -70,19 +70,19 @@ export default async function UnitListPage({ searchParams }: UnitListPageProps) 
   const pageSize = [5, 10, 25, 50].includes(parseInt(params.pageSize || "10", 10))
     ? parseInt(params.pageSize!, 10)
     : 10;
-  
-  const dateTarget = ["createdAt", "buyAt", "soldAt"].includes(params.dateTarget as string) 
-    ? (params.dateTarget as "createdAt" | "buyAt" | "soldAt") 
+
+  const dateTarget = ["createdAt", "buyAt", "soldAt"].includes(params.dateTarget as string)
+    ? (params.dateTarget as "createdAt" | "buyAt" | "soldAt")
     : undefined;
   const dateRangeFrom = params.dateRangeFrom || undefined;
   const dateRangeTo = params.dateRangeTo || undefined;
 
-  const result = await getUnits({ 
-    search, 
-    status, 
-    sortBy, 
-    sortOrder, 
-    page: page || 1, 
+  const result = await getUnits({
+    search,
+    status,
+    sortBy,
+    sortOrder,
+    page: page || 1,
     pageSize: pageSize || 10,
     dateTarget,
     dateRangeFrom,
@@ -152,6 +152,7 @@ export default async function UnitListPage({ searchParams }: UnitListPageProps) 
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Harga (Rp)</TableHead>
                     <TableHead>Transaksi</TableHead>
+                    <TableHead>Laba</TableHead>
                     <TableHead>Ditambahkan</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -191,6 +192,9 @@ export default async function UnitListPage({ searchParams }: UnitListPageProps) 
                             <span className="text-muted-foreground text-xs">B: {formatDate(unit.buyAt)}</span>
                             <span className="text-muted-foreground text-xs">J: {formatDate(unit.soldAt)}</span>
                           </div>
+                        </TableCell>
+                        <TableCell className="text-right text-sm">
+                          {unit.grossProfit ? formatCurrency(unit.grossProfit) : "-"}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-xs">
                           {formatDate(unit.createdAt)}

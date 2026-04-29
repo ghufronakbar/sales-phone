@@ -25,6 +25,9 @@ model User {
   deletedAt            DateTime?
   sendInvoiceHistories SendInvoiceHistory[]
   cashflowLogs         CashflowLog[]
+
+  // access
+  isSuperAdmin Boolean
 }
 
 model Unit {
@@ -51,6 +54,9 @@ model Unit {
   deletedAt DateTime?
 
   unitLogs UnitLog[]
+
+  grossProfit Int
+  netProfit   Int
 
   // worker
   workerId  Int?

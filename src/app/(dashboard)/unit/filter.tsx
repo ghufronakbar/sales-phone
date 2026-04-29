@@ -38,6 +38,8 @@ const SORT_OPTIONS = [
   { value: "name-desc", label: "Nama Z-A" },
   { value: "buyPrice-desc", label: "Harga Beli ↓" },
   { value: "buyPrice-asc", label: "Harga Beli ↑" },
+  { value: "grossProfit-desc", label: "Laba ↓" },
+  { value: "grossProfit-asc", label: "Laba ↑" },
 ];
 
 const DATE_TARGET_OPTIONS = [
@@ -99,12 +101,12 @@ export function UnitFilter({ search, status, sort, pageSize, dateTarget, dateRan
     setDate(selectedDateRange);
     if (selectedDateRange?.from) {
       if (selectedDateRange.to) {
-        updateParams({ 
+        updateParams({
           dateRangeFrom: format(selectedDateRange.from, "yyyy-MM-dd"),
           dateRangeTo: format(selectedDateRange.to, "yyyy-MM-dd")
         });
       } else {
-        updateParams({ 
+        updateParams({
           dateRangeFrom: format(selectedDateRange.from, "yyyy-MM-dd"),
           dateRangeTo: ""
         });
@@ -125,10 +127,10 @@ export function UnitFilter({ search, status, sort, pageSize, dateTarget, dateRan
     router.push(pathname);
   }
 
-  const hasActiveFilters = 
-    search || 
-    (status && status !== "ALL") || 
-    (sort && sort !== "createdAt-desc") || 
+  const hasActiveFilters =
+    search ||
+    (status && status !== "ALL") ||
+    (sort && sort !== "createdAt-desc") ||
     (dateTarget && dateRangeFrom);
 
   return (

@@ -203,7 +203,7 @@ export function CashflowListClient({
     {
       title: "Total Pengeluaran",
       value: formatCurrency(summary.expense),
-      description: "Warna merah dipakai agar expense cepat terbaca.",
+      description: "Biaya pengeluaran operasional",
       icon: ArrowDownRight,
       className:
         "border-red-200/70 bg-red-50/70 dark:border-red-900/40 dark:bg-red-950/20",
@@ -670,17 +670,17 @@ function CashflowDetailContent({
 
                   {(log.imageAttachmentsBefore.length > 0 ||
                     log.imageAttachmentsAfter.length > 0) && (
-                    <div className="mt-3 grid gap-3 md:grid-cols-2">
-                      <AttachmentGroup
-                        title="Lampiran Sebelum"
-                        images={log.imageAttachmentsBefore}
-                      />
-                      <AttachmentGroup
-                        title="Lampiran Sesudah"
-                        images={log.imageAttachmentsAfter}
-                      />
-                    </div>
-                  )}
+                      <div className="mt-3 grid gap-3 md:grid-cols-2">
+                        <AttachmentGroup
+                          title="Lampiran Sebelum"
+                          images={log.imageAttachmentsBefore}
+                        />
+                        <AttachmentGroup
+                          title="Lampiran Sesudah"
+                          images={log.imageAttachmentsAfter}
+                        />
+                      </div>
+                    )}
                 </div>
               );
             })

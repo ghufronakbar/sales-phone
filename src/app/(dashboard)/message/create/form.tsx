@@ -29,11 +29,11 @@ import { Badge } from "@/components/ui/badge";
 const TEMPLATES = [
   {
     name: "Promo Diskon",
-    content: "Halo Kak {name},\n\nKhusus minggu ini ada diskon spesial untuk pembelian unit dan aksesoris di toko kami. Yuk mampir sebelum kehabisan!",
+    content: "Halo Kak,\n\nKhusus minggu ini ada diskon spesial untuk pembelian unit dan aksesoris di toko kami. Yuk mampir sebelum kehabisan!",
   },
   {
     name: "Restock Barang",
-    content: "Halo Kak {name},\n\nBerbagai unit terbaru dan aksesoris keren baru saja restock di toko kami loh. Cek selengkapnya hari ini!",
+    content: "Halo Kak,\n\nBerbagai unit terbaru dan aksesoris keren baru saja restock di toko kami loh. Cek selengkapnya hari ini!",
   },
   {
     name: "Pengumuman Toko",
@@ -198,9 +198,9 @@ export function MessageCreateForm({ customers }: Props) {
               </span>
             </div>
             {/* Tanda Peringatan Untuk Variabel */}
-            <div className="bg-muted px-3 py-2 rounded-md text-xs text-muted-foreground">
+            {/* <div className="bg-muted px-3 py-2 rounded-md text-xs text-muted-foreground">
               Tip: Jika terdapat variabel seperti <code className="bg-background px-1 rounded text-primary">{`{name}`}</code>, pastikan untuk menghapus atau menggantinya secara manual. (Saat ini Blast Message mengirim isi pesan apa adanya tanpa replace otomatis).
-            </div>
+            </div> */}
             <Textarea
               placeholder="Tulis pesan Anda di sini..."
               className="min-h-[260px] resize-y"

@@ -132,13 +132,13 @@ export type UserDetailPayload = Prisma.UserGetPayload<{
   include: {
     unitLogs: {
       include: {
-        unit: { select: { id: true, name: true } };
+        unit: { select: { id: true; name: true } };
       };
       orderBy: { createdAt: "desc" };
     };
     accessoryLogs: {
       include: {
-        accessory: { select: { id: true, name: true } };
+        accessory: { select: { id: true; name: true } };
       };
       orderBy: { createdAt: "desc" };
     };
@@ -150,14 +150,16 @@ export type UserDetailPayload = Prisma.UserGetPayload<{
     };
     sendInvoiceHistories: {
       include: {
-        customer: { select: { id: true, name: true } };
+        customer: { select: { id: true; name: true } };
       };
       orderBy: { createdAt: "desc" };
     };
   };
 }>;
 
-export async function getUserById(id: number): Promise<ActionResult<UserDetailPayload | null>> {
+export async function getUserById(
+  id: number,
+): Promise<ActionResult<UserDetailPayload | null>> {
   try {
     const user = await prisma.user.findFirst({
       where: { id, deletedAt: null },
@@ -201,17 +203,23 @@ interface CreateUserInput {
   passwordRaw: string;
 }
 
-export async function createUser(input: CreateUserInput): Promise<ActionResult<UserWithoutPassword>> {
+export async function createUser(
+  input: CreateUserInput,
+): Promise<ActionResult<UserWithoutPassword>> {
   try {
     const existing = await prisma.user.findUnique({
       where: { email: input.email },
     });
-    
+
     // Walaupun soft delete, jika dia pernah create dengan email ini mungkin butuh penanganan
     // Cek uniqueness
     if (existing) {
       if (existing.deletedAt) {
-        return { success: false, error: "Email sudah digunakan oleh user yang dihapus. Coba gunakan email lain." };
+        return {
+          success: false,
+          error:
+            "Email sudah digunakan oleh user yang dihapus. Coba gunakan email lain.",
+        };
       }
       return { success: false, error: "Email sudah terdaftar." };
     }
@@ -223,12 +231,13 @@ export async function createUser(input: CreateUserInput): Promise<ActionResult<U
         name: input.name,
         email: input.email,
         password: hashedPassword,
+        isSuperAdmin: false,
       },
       omit: { password: true },
     });
 
     revalidateTag(CACHE_TAG.USER);
-    
+
     return { success: true, data: user };
   } catch (error) {
     console.error("createUser error:", error);
@@ -246,12 +255,14 @@ interface UpdateUserInput {
   email: string;
 }
 
-export async function updateUser(input: UpdateUserInput): Promise<ActionResult<UserWithoutPassword>> {
+export async function updateUser(
+  input: UpdateUserInput,
+): Promise<ActionResult<UserWithoutPassword>> {
   try {
     const existing = await prisma.user.findUnique({
       where: { email: input.email },
     });
-    
+
     if (existing && existing.id !== input.id) {
       return { success: false, error: "Email sudah terdaftar oleh user lain." };
     }

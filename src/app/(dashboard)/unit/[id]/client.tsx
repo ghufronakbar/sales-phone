@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { useGlobalScanner } from "@/hooks/useGlobalScanner";
+import { CameraScanner } from "@/components/ui/camera-scanner";
 import Image from "next/image";
 import {
   Dialog,
@@ -154,6 +156,15 @@ export function UnitDetailClient({
     unit.buyAt ? new Date(unit.buyAt).toISOString().split("T")[0] : ""
   );
   const [images, setImages] = useState<string[]>(unit.images);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+
+  // Global scanner listener for Edit Mode
+  useGlobalScanner((scannedCode) => {
+    if (isEditing) {
+      setImei(scannedCode);
+      toast.success("IMEI berhasil di-scan!");
+    }
+  });
 
   // Status change fields
   const [customerId, setCustomerId] = useState(unit.customerId?.toString() ?? "");
@@ -415,7 +426,16 @@ export function UnitDetailClient({
               </div>
               <div className="space-y-2">
                 <Label>IMEI</Label>
-                <Input value={imei} onChange={(e) => setImei(e.target.value)} />
+                <div className="flex items-center gap-2">
+                  <Input value={imei} onChange={(e) => setImei(e.target.value)} className="flex-1" />
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    onClick={() => setIsScannerOpen(true)}
+                  >
+                    Scan Kamera
+                  </Button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -779,6 +799,15 @@ export function UnitDetailClient({
           </div>
         </DialogContent>
       </Dialog>
+      
+      <CameraScanner 
+        open={isScannerOpen} 
+        onOpenChange={setIsScannerOpen} 
+        onScan={(code) => {
+          setImei(code);
+          toast.success("IMEI berhasil di-scan dari kamera!");
+        }} 
+      />
     </div>
   );
 }

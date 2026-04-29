@@ -221,6 +221,8 @@ export async function createUnit(
           buyAt: input.buyAt,
           buyPrice: input.buyPrice,
           customerId: input.customerId,
+          grossProfit: 0,
+          netProfit: 0,
         },
         include: { customer: true, worker: true },
       });
@@ -286,10 +288,17 @@ export async function updateUnit(
         where: { id },
       });
 
+      const soldPrice = input.soldPrice || before.soldPrice || 0;
+      const buyPrice = input.buyPrice || before.buyPrice || 0;
+      const workerFee = input.workerFee || before.workerFee || 0;
+
+      const grossProfit = soldPrice - buyPrice;
+      const netProfit = grossProfit - workerFee;
+
       // 2. Update unit
       const after = await tx.unit.update({
         where: { id },
-        data,
+        data: { ...data, grossProfit, netProfit },
         include: { customer: true, worker: true },
       });
 

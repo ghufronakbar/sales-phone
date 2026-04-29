@@ -76,12 +76,12 @@ export default async function CashflowPage({ searchParams }: CashflowPageProps) 
       <header className="flex h-14 items-center gap-2 border-b px-4">
         <SidebarTrigger />
         <Separator orientation="vertical" className="h-4" />
-        <h1 className="text-sm font-semibold">Cashflow</h1>
+        <h1 className="text-sm font-semibold">Pemasukan & Pengeluaran Lainnya</h1>
       </header>
 
       <div className="p-4 md:p-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold tracking-tight">Cashflow</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Arus Kas Operasional</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Kelola pemasukan dan pengeluaran operasional.{" "}
             <span className="font-medium">{data.total} transaksi</span> ditemukan.
