@@ -19,6 +19,7 @@ export function UserCreateForm() {
   function handleSubmit(formData: FormData) {
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
     const passwordRaw = formData.get("passwordRaw") as string;
     const passwordConfirm = formData.get("passwordConfirm") as string;
 
@@ -28,6 +29,10 @@ export function UserCreateForm() {
     }
     if (!email.trim() || !email.includes("@")) {
       setError("Email tidak valid.");
+      return;
+    }
+    if (!phone.startsWith("0")) {
+      setError("Nomor telepon harus diawali dengan 0.");
       return;
     }
     if (!passwordRaw || passwordRaw.length < 6) {
@@ -44,6 +49,7 @@ export function UserCreateForm() {
       const result = await createUser({
         name,
         email,
+        phone,
         passwordRaw,
       });
 
@@ -80,9 +86,16 @@ export function UserCreateForm() {
             <Input id="name" name="name" placeholder="John Doe" disabled={isPending} />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Alamat Email</Label>
-            <Input id="email" name="email" type="email" placeholder="john@example.com" disabled={isPending} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="email">Alamat Email</Label>
+              <Input id="email" name="email" type="email" placeholder="john@example.com" disabled={isPending} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Nomor Telepon</Label>
+              <Input id="phone" name="phone" placeholder="08xxxxxxxxx" disabled={isPending} />
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

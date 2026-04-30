@@ -5,12 +5,23 @@ import { useRouter } from "next/navigation";
 import { createAccessorySale } from "@/actions/accessory";
 import type { AccessoryForSale } from "@/actions/accessory";
 import { createCustomer as createCustomerAction } from "@/actions/customer";
+import { sendAccessorySaleInvoiceWhatsApp } from "@/actions/message";
 import type { WorkerData } from "@/actions/worker";
 import type { Customer } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -155,8 +166,10 @@ export function AccessorySellForm({ accessories, customers, workers }: Props) {
     });
   }
 
-  // Submit sale
-  function handleSubmit() {
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+  // Submit sale validation
+  function handlePreSubmit() {
     if (cart.length === 0) {
       toast.error("Tambahkan minimal 1 item ke keranjang.");
       return;
@@ -176,7 +189,13 @@ export function AccessorySellForm({ accessories, customers, workers }: Props) {
       return;
     }
 
+    setIsConfirmOpen(true);
+  }
+
+  function processSale(sendInvoice: boolean) {
+    setIsConfirmOpen(false);
     startTransition(async () => {
+      const parsedFeeWorker = parseInt(feeWorker, 10);
       const result = await createAccessorySale({
         customerId: parseInt(selectedCustomerId, 10),
         workerId: parseInt(selectedWorkerId, 10),
@@ -191,6 +210,16 @@ export function AccessorySellForm({ accessories, customers, workers }: Props) {
         toast.success(
           `Penjualan berhasil! Total: ${formatCurrency(result.data.totalPrice)}`,
         );
+
+        if (sendInvoice) {
+          const invoiceResult = await sendAccessorySaleInvoiceWhatsApp(result.data.id);
+          if (invoiceResult.success) {
+            toast.success("Invoice WA berhasil dikirim!");
+          } else {
+            toast.error(invoiceResult.error ?? "Penjualan berhasil, namun gagal mengirim Invoice WA.");
+          }
+        }
+
         router.push("/accessory");
       } else {
         toast.error(result.error ?? "Gagal memproses penjualan.");
@@ -520,7 +549,7 @@ export function AccessorySellForm({ accessories, customers, workers }: Props) {
         <Button
           className="w-full"
           size="lg"
-          onClick={handleSubmit}
+          onClick={handlePreSubmit}
           disabled={
             isPending ||
             cart.length === 0 ||
@@ -547,6 +576,37 @@ export function AccessorySellForm({ accessories, customers, workers }: Props) {
           </p>
         )}
       </div>
+
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Penjualan</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin memproses penjualan ini? Total belanja pelanggan adalah{" "}
+              <strong>{formatCurrency(totalPrice)}</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel disabled={isPending}>Batal</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => processSale(false)}
+              disabled={isPending}
+            >
+              {isPending ? "Memproses..." : "Proses Saja"}
+            </Button>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                processSale(true);
+              }}
+              disabled={isPending}
+            >
+              {isPending ? "Memproses..." : "Proses & Kirim Invoice WA"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

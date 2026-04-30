@@ -74,7 +74,7 @@ async function getInvoiceStoreInformation(): Promise<InvoiceStoreInformation> {
  * Helper internal untuk memanggil API Fonnte send message.
  * Menerima array target phone numbers dan message text.
  */
-async function sendFonnteMessage(targets: string[], message: string): Promise<boolean> {
+export async function sendFonnteMessage(targets: string[], message: string): Promise<boolean> {
   if (!FONNTE_TOKEN) {
     console.warn("Peringatan: FONNTE_TOKEN belum diatur di .env");
     return false;

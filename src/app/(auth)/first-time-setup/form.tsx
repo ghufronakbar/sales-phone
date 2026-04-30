@@ -20,6 +20,7 @@ export function FirstTimeSetupForm() {
 
   function handleSubmit(formData: FormData) {
     const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
 
@@ -40,7 +41,7 @@ export function FirstTimeSetupForm() {
 
     setError(null);
     startTransition(async () => {
-      const result = await register({ email, password });
+      const result = await register({ email, phone, password });
       if (!result.success) {
         setError(result.error ?? "Terjadi kesalahan.");
       }
@@ -95,6 +96,17 @@ export function FirstTimeSetupForm() {
               required
               minLength={6}
               autoComplete="new-password"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Nomor HP</Label>
+            <Input
+              id="phone"
+              name="phone"
+              type="phone"
+              placeholder="08xxxxxxxxxx"
+              required
+              minLength={10}
             />
           </div>
         </CardContent>

@@ -14,6 +14,7 @@ model User {
   id       Int    @id @default(autoincrement())
   name     String
   email    String @unique
+  phone    String @unique
   password String // Hak akses ditunda, fokus ke autentikasi dasar dulu
 
   unitLogs      UnitLog[]
@@ -27,7 +28,52 @@ model User {
   cashflowLogs         CashflowLog[]
 
   // access
-  isSuperAdmin Boolean
+  isSuperAdmin               Boolean
+  // access dashboard
+  accessDashboardGeneralRead Boolean @default(false)
+  // access unit
+  accessUnitRead             Boolean @default(false)
+  accessUnitCreate           Boolean @default(false)
+  accessUnitUpdate           Boolean @default(false)
+  accessUnitDelete           Boolean @default(false)
+  accessUnitReport           Boolean @default(false)
+  // access accessory
+  accessAccessoryRead        Boolean @default(false)
+  accessAccessoryCreate      Boolean @default(false)
+  accessAccessoryUpdate      Boolean @default(false) // edit/purchase (include editing history)
+  accessAccessorySell        Boolean @default(false) // only for selling
+  accessAccessoryDelete      Boolean @default(false)
+  accessAccessoryReport      Boolean @default(false)
+  accessAccessoryHistory     Boolean @default(false)
+  // access message
+  accessMessageSend          Boolean @default(false)
+  accessMessageHistory       Boolean @default(false)
+  // access customer
+  accessCustomerRead         Boolean @default(false)
+  accessCustomerCreate       Boolean @default(false)
+  accessCustomerUpdate       Boolean @default(false)
+  accessCustomerDelete       Boolean @default(false)
+  // access user
+  accessUserRead             Boolean @default(false)
+  accessUserCreate           Boolean @default(false)
+  accessUserUpdate           Boolean @default(false)
+  accessUserDelete           Boolean @default(false)
+  // note: untuk akses user. super admin tidak dapat dihapus, dan selain super admin tidak bisa reset password orang lain
+  // access worker
+  accessWorkerRead           Boolean @default(false)
+  accessWorkerCreate         Boolean @default(false)
+  accessWorkerUpdate         Boolean @default(false)
+  accessWorkerDelete         Boolean @default(false)
+  accessWorkerReport         Boolean @default(false)
+  // access information
+  accessInformationRead      Boolean @default(false)
+  accessInformationUpdate    Boolean @default(false)
+  // access cashflow
+  accessCashflowRead         Boolean @default(false)
+  accessCashflowCreate       Boolean @default(false)
+  accessCashflowUpdate       Boolean @default(false)
+  accessCashflowDelete       Boolean @default(false)
+  otps                       OTP[]
 }
 
 model Unit {
@@ -402,3 +448,28 @@ model CashflowLog {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 }
+
+model OTP {
+  id         Int      @id @default(autoincrement())
+  identifier String   @unique // Only Phone
+  code       String   @db.VarChar(6)
+  expiresAt  DateTime // + 5 menit
+  used       Boolean  @default(false)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+// rules:
+// - identifier unique
+// - 6 digit code 
+// - expires after 5 minutes
+// - used true only once
+// - user must exist
+// - can be resend after 1 minute
+// - must send via whatsapp
+// - use for reset password 

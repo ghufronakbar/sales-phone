@@ -37,6 +37,7 @@ export function UserDetailClient({ user }: Props) {
   function onUpdateProfile(formData: FormData) {
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
 
     if (!name.trim()) {
       setErrorProfile("Nama tidak boleh kosong");
@@ -46,8 +47,12 @@ export function UserDetailClient({ user }: Props) {
       setErrorProfile("Email tidak valid");
       return;
     }
+    if (!phone.startsWith("0")) {
+      setErrorProfile("Nomor telepon harus diawali dengan 0");
+      return;
+    }
 
-    if (name === user.name && email === user.email) {
+    if (name === user.name && email === user.email && phone === user.phone) {
       toast.info("Tidak ada perubahan.");
       return;
     }
@@ -58,6 +63,7 @@ export function UserDetailClient({ user }: Props) {
         id: user.id,
         name,
         email,
+        phone,
       });
 
       if (result.success) {
@@ -118,6 +124,10 @@ export function UserDetailClient({ user }: Props) {
               <div className="space-y-2">
                 <Label htmlFor="email">Alamat Email</Label>
                 <Input id="email" name="email" type="email" defaultValue={user.email} disabled={isPending} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Nomor Telepon</Label>
+                <Input id="phone" name="phone" defaultValue={user.phone} disabled={isPending} />
               </div>
             </CardContent>
             <CardFooter className="bg-muted/50 py-3 flex justify-end">

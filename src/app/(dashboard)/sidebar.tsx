@@ -33,6 +33,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import { logout } from "@/actions/auth";
 
 type MenuItem = {
   title: string;
@@ -197,12 +198,22 @@ export function DashboardSidebar({ email }: DashboardSidebarProps) {
         </div>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Keluar">
-              <Link href="/logout">
-                <LogOut />
-                <span>Keluar</span>
+            <SidebarMenuButton asChild tooltip="Profil" isActive={pathname === "/profile"}>
+              <Link href="/profile">
+                <UserCircle />
+                <span>Profil</span>
               </Link>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <form action={logout}>
+              <SidebarMenuButton asChild tooltip="Keluar">
+                <button type="submit">
+                  <LogOut />
+                  <span>Keluar</span>
+                </button>
+              </SidebarMenuButton>
+            </form>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

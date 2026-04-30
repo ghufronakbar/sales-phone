@@ -200,6 +200,7 @@ export async function getUserById(
 interface CreateUserInput {
   name: string;
   email: string;
+  phone: string;
   passwordRaw: string;
 }
 
@@ -207,21 +208,32 @@ export async function createUser(
   input: CreateUserInput,
 ): Promise<ActionResult<UserWithoutPassword>> {
   try {
-    const existing = await prisma.user.findUnique({
+    const existingEmail = await prisma.user.findUnique({
       where: { email: input.email },
     });
 
-    // Walaupun soft delete, jika dia pernah create dengan email ini mungkin butuh penanganan
-    // Cek uniqueness
-    if (existing) {
-      if (existing.deletedAt) {
+    if (existingEmail) {
+      if (existingEmail.deletedAt) {
         return {
           success: false,
-          error:
-            "Email sudah digunakan oleh user yang dihapus. Coba gunakan email lain.",
+          error: "Email sudah digunakan oleh user yang dihapus. Coba gunakan email lain.",
         };
       }
       return { success: false, error: "Email sudah terdaftar." };
+    }
+
+    const existingPhone = await prisma.user.findUnique({
+      where: { phone: input.phone },
+    });
+
+    if (existingPhone) {
+      if (existingPhone.deletedAt) {
+        return {
+          success: false,
+          error: "Nomor telepon sudah digunakan oleh user yang dihapus.",
+        };
+      }
+      return { success: false, error: "Nomor telepon sudah terdaftar." };
     }
 
     const hashedPassword = await hashPassword(input.passwordRaw);
@@ -230,6 +242,7 @@ export async function createUser(
       data: {
         name: input.name,
         email: input.email,
+        phone: input.phone,
         password: hashedPassword,
         isSuperAdmin: false,
       },
@@ -253,18 +266,27 @@ interface UpdateUserInput {
   id: number;
   name: string;
   email: string;
+  phone: string;
 }
 
 export async function updateUser(
   input: UpdateUserInput,
 ): Promise<ActionResult<UserWithoutPassword>> {
   try {
-    const existing = await prisma.user.findUnique({
+    const existingEmail = await prisma.user.findUnique({
       where: { email: input.email },
     });
 
-    if (existing && existing.id !== input.id) {
+    if (existingEmail && existingEmail.id !== input.id) {
       return { success: false, error: "Email sudah terdaftar oleh user lain." };
+    }
+
+    const existingPhone = await prisma.user.findUnique({
+      where: { phone: input.phone },
+    });
+
+    if (existingPhone && existingPhone.id !== input.id) {
+      return { success: false, error: "Nomor telepon sudah terdaftar oleh user lain." };
     }
 
     const updated = await prisma.user.update({
@@ -272,6 +294,7 @@ export async function updateUser(
       data: {
         name: input.name,
         email: input.email,
+        phone: input.phone,
       },
       omit: { password: true },
     });
@@ -308,13 +331,24 @@ export async function resetUserPassword(id: number): Promise<ActionResult> {
 
 export async function deleteUser(id: number): Promise<ActionResult> {
   try {
+    const existing = await prisma.user.findUnique({
+      where: { id },
+      select: { email: true, phone: true }
+    });
+
+    if (!existing) {
+      return { success: false, error: "User tidak ditemukan." };
+    }
+
+    const timestamp = Date.now();
+
     // Soft Delete to prevent cascading removal of unit & accessory logs
     await prisma.user.update({
       where: { id },
       data: {
         deletedAt: new Date(),
-        // optional: mangle email to allow re-registration of the same email later
-        email: `deleted_${Date.now()}_${id}_@sales-phone.local`,
+        email: `deleted-${timestamp}-${existing.email}`,
+        phone: `deleted-${timestamp}-${existing.phone}`,
       },
     });
 
