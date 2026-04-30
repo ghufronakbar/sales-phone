@@ -1,10 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { UNIT_PAYMENT_TYPE_CONFIG } from "@/constants/unit";
-import type { PaymentType } from "@prisma/client";
 import { Printer } from "lucide-react";
 import styles from "./receipt-print-button.module.css";
+import type { AccessorySaleHistoryData } from "@/actions/accessory";
 
 interface StoreInformation {
   storeName: string;
@@ -14,21 +13,8 @@ interface StoreInformation {
   footNoteReceipt: string | null;
 }
 
-interface ReceiptUnitData {
-  id: number;
-  name: string;
-  imei: string | null;
-  soldAt: string | null;
-  soldPrice: number | null;
-  dpAmount: number | null;
-  paymentType: PaymentType | null;
-  customer: { name: string; phone: string | null };
-  worker: { name: string } | null;
-  workerFee: number | null;
-}
-
 interface Props {
-  unit: ReceiptUnitData;
+  sale: AccessorySaleHistoryData;
   storeInformation: StoreInformation;
 }
 
@@ -40,7 +26,7 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-function formatDateTime(value: string | null): string {
+function formatDateTime(value: Date | null | string): string {
   if (!value) return "-";
   return new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
@@ -51,14 +37,15 @@ function formatDateTime(value: string | null): string {
   }).format(new Date(value));
 }
 
-export function UnitReceiptPrintButton({ unit, storeInformation }: Props) {
-  const soldPrice = unit.soldPrice ?? 0;
-  const dpAmount = unit.dpAmount ?? 0;
-  const remaining = Math.max(soldPrice - dpAmount, 0);
-  const paymentTypeLabel = unit.paymentType
-    ? UNIT_PAYMENT_TYPE_CONFIG[unit.paymentType].label
-    : "-";
+export function AccessoryReceiptPrintButton({ sale, storeInformation }: Props) {
   const footNote = storeInformation.footNoteReceipt?.trim();
+
+  // Accessory sales are assumed to be fully paid via cash (or some default mechanism if not specified)
+  const paymentTypeLabel = "CASH";
+
+  // Calculate total items and total qty
+  const totalItemCount = sale.items.length;
+  const totalQtyCount = sale.items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <div className={styles.root}>
@@ -93,18 +80,22 @@ export function UnitReceiptPrintButton({ unit, storeInformation }: Props) {
           <div className={styles.tableHeader}>
             <span className={styles.tableLabel}>No. Faktur</span>
             <span>:</span>
-            <span className={styles.tableValue}>SE{unit.id.toString().padStart(8, "0")}</span>
+            <span className={styles.tableValue}>SA{sale.id.toString().padStart(8, "0")}</span>
           </div>
           <div className={styles.tableHeader}>
             <span className={styles.tableLabel}>Tanggal</span>
             <span>:</span>
-            <span className={styles.tableValue}>{formatDateTime(unit.soldAt)}</span>
+            <span className={styles.tableValue}>{formatDateTime(sale.createdAt)}</span>
           </div>
-
+          <div className={styles.tableHeader}>
+            <span className={styles.tableLabel}>Kasir</span>
+            <span>:</span>
+            <span className={styles.tableValue}>Kasir 1</span>
+          </div>
           <div className={styles.tableHeader}>
             <span className={styles.tableLabel}>Customer</span>
             <span>:</span>
-            <span className={styles.tableValue}>{unit.customer.name}</span>
+            <span className={styles.tableValue}>{sale.customer.name}</span>
           </div>
           <div className={styles.tableHeader}>
             <span className={styles.tableLabel}>Email</span>
@@ -114,41 +105,36 @@ export function UnitReceiptPrintButton({ unit, storeInformation }: Props) {
           <div className={styles.tableHeader}>
             <span className={styles.tableLabel}>HP</span>
             <span>:</span>
-            <span className={styles.tableValue}>{unit.customer.phone || "-"}</span>
+            <span className={styles.tableValue}>{sale.customer.phone || "-"}</span>
           </div>
-          {/* <div className={styles.tableHeader}>
+          <div className={styles.tableHeader}>
             <span className={styles.tableLabel}>ID Card</span>
             <span>:</span>
             <span className={styles.tableValue}>-</span>
-          </div> */}
+          </div>
 
           <div className={styles.divider} />
 
-          <div className={styles.itemGrid}>
-            <span className={styles.itemNumber}>1 .</span>
-            <div className={styles.itemDetails}>
-              {/* <span className={styles.textMuted}>{unit.imei || unit.id.toString().padStart(10, "0")}</span> */}
-              <p className={styles.itemName}>{unit.name}</p>
-              <div className={styles.itemPriceRow}>
-                <span className={styles.itemQty}>1 Pcs</span>
-                {/* <span className={styles.itemPrice}>{formatCurrency(soldPrice)}</span> */}
-                <span className={styles.itemTotal}>{formatCurrency(soldPrice)}</span>
+          {sale.items.map((item, index) => (
+            <div key={item.id} className={styles.itemGrid}>
+              <span className={styles.itemNumber}>{index + 1} .</span>
+              <div className={styles.itemDetails}>
+                <p className={styles.itemName}>{item.accessory.name}</p>
+                <div className={styles.itemPriceRow}>
+                  <span className={styles.itemQty}>{item.quantity} Pcs</span>
+                  <span className={styles.itemPrice}>{formatCurrency(item.sellPricePerUnit)}</span>
+                  <span className={styles.itemTotal}>{formatCurrency(item.sellPricePerUnit * item.quantity)}</span>
+                </div>
+                {/* <span className={styles.textMuted}>Disc: 0,00</span> */}
               </div>
-              {/* <span className={styles.textMuted}>Disc: 0,00</span> */}
-              {unit.imei && (
-                <>
-                  <span className={styles.textMuted}>Serial number:</span>
-                  <span className={styles.textMuted}>{unit.imei}</span>
-                </>
-              )}
             </div>
-          </div>
+          ))}
 
           <div className={styles.divider} />
 
           <div className={styles.rowFlex}>
-            <span>Total Item = 1</span>
-            <span>Total Qty = 1</span>
+            <span>Total Item = {totalItemCount}</span>
+            <span>Total Qty = {totalQtyCount}</span>
           </div>
 
           <div className={styles.divider} />
@@ -156,23 +142,36 @@ export function UnitReceiptPrintButton({ unit, storeInformation }: Props) {
           <div className={styles.totalsGrid}>
             <span className={styles.totalsLabel}>Grand Total</span>
             <span>:</span>
-            <span className={styles.totalsValue}>{formatCurrency(soldPrice)}</span>
+            <span className={styles.totalsValue}>{formatCurrency(sale.totalPrice)}</span>
           </div>
           <div className={styles.totalsGrid}>
-            <span className={styles.totalsLabel}>DP</span>
+            <span className={styles.totalsLabel}>Bayar</span>
             <span>:</span>
-            <span className={styles.totalsValue}>{formatCurrency(dpAmount > 0 ? dpAmount : soldPrice)}</span>
+            <span className={styles.totalsValue}>{formatCurrency(sale.totalPrice)}</span>
           </div>
-          <div className={styles.totalsGrid}>
+          {/* <div className={styles.totalsGrid}>
             <span className={styles.totalsLabel}>Uang Kembalian</span>
             <span>:</span>
             <span className={styles.totalsValue}>0,00</span>
-          </div>
-
-          <div className={styles.totalsGrid}>
-            <span className={styles.totalsLabel}>Pembayaran</span>
+          </div> */}
+          {/* <div className={styles.totalsGrid}>
+            <span className={styles.totalsLabel}>Ret Amt</span>
             <span>:</span>
-            <span className={styles.totalsValue}>{paymentTypeLabel}</span>
+            <span className={styles.totalsValue}>0</span>
+          </div> */}
+
+          <div className={styles.paymentSection}>
+            <span>Pembayaran</span>
+            <div className={styles.itemGrid}>
+              <span className={styles.itemNumber}>1</span>
+              <div className={styles.itemDetails}>
+                <div className={styles.paymentRow}>
+                  <span>-</span>
+                  <span>{formatCurrency(sale.totalPrice)}</span>
+                </div>
+                <span className={styles.paymentMethod}>{paymentTypeLabel}</span>
+              </div>
+            </div>
           </div>
 
           <div className={styles.divider} />

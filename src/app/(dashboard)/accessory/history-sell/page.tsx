@@ -1,6 +1,7 @@
 import { getAccessorySales } from "@/actions/accessory";
 import { getCustomers } from "@/actions/customer";
 import { getWorkers } from "@/actions/worker";
+import { getCommonInformation } from "@/actions/common-information";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Package } from "lucide-react";
@@ -31,7 +32,7 @@ export default async function AccessoryHistorySellPage({ searchParams }: Accesso
   const dateRangeFrom = params.dateRangeFrom || undefined;
   const dateRangeTo = params.dateRangeTo || undefined;
 
-  const [result, customersResult, workersResult] = await Promise.all([
+  const [result, customersResult, workersResult, commonInformationResult] = await Promise.all([
     getAccessorySales({
       search,
       page,
@@ -41,6 +42,7 @@ export default async function AccessoryHistorySellPage({ searchParams }: Accesso
     }),
     getCustomers(),
     getWorkers(),
+    getCommonInformation(),
   ]);
 
   const data = result.data ?? {
@@ -52,6 +54,14 @@ export default async function AccessoryHistorySellPage({ searchParams }: Accesso
   };
   const customers = customersResult.data ?? [];
   const workers = workersResult.data ?? [];
+  const storeInformation = commonInformationResult.data ?? {
+    storeName: "POS Internal",
+    storeAddress: "-",
+    storePhone: "-",
+    storeLogo: null,
+    footNoteReceipt: null,
+    unitFeePercentage: 30,
+  };
 
   return (
     <>
@@ -95,6 +105,13 @@ export default async function AccessoryHistorySellPage({ searchParams }: Accesso
               sales={data.sales}
               customers={customers}
               workers={workers}
+              storeInformation={{
+                storeName: storeInformation.storeName,
+                storeAddress: storeInformation.storeAddress,
+                storePhone: storeInformation.storePhone,
+                storeLogo: storeInformation.storeLogo,
+                footNoteReceipt: storeInformation.footNoteReceipt,
+              }}
             />
 
             {/* Pagination */}

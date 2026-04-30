@@ -7,6 +7,7 @@ import {
   updateAccessorySale,
   type AccessorySaleHistoryData,
 } from "@/actions/accessory";
+import { sendAccessorySaleInvoiceWhatsApp } from "@/actions/message";
 import type { WorkerData } from "@/actions/worker";
 import type { Customer } from "@prisma/client";
 import { toast } from "sonner";
@@ -47,7 +48,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, MessageSquare } from "lucide-react";
 
 function formatCurrency(value: number | null | undefined): string {
   if (value == null) return "—";
@@ -73,12 +74,22 @@ interface Props {
   sales: AccessorySaleHistoryData[];
   customers: Customer[];
   workers: WorkerData[];
+  storeInformation: {
+    storeName: string;
+    storeAddress: string;
+    storePhone: string;
+    storeLogo: string | null;
+    footNoteReceipt: string | null;
+  };
 }
+
+import { AccessoryReceiptPrintButton } from "./receipt-print-button";
 
 export function AccessoryHistorySellClient({
   sales,
   customers,
   workers,
+  storeInformation,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -88,12 +99,26 @@ export function AccessoryHistorySellClient({
   const [customerId, setCustomerId] = useState("");
   const [workerId, setWorkerId] = useState("");
   const [feeWorker, setFeeWorker] = useState("");
+  const [isSendingInvoice, setIsSendingInvoice] = useState(false);
 
   function openEditDialog(sale: AccessorySaleHistoryData) {
     setEditingSale(sale);
     setCustomerId(sale.customerId.toString());
     setWorkerId(sale.workerId.toString());
     setFeeWorker(sale.feeWorker.toString());
+  }
+
+  function handleSendInvoice(saleId: number) {
+    setIsSendingInvoice(true);
+    startTransition(async () => {
+      const result = await sendAccessorySaleInvoiceWhatsApp(saleId);
+      setIsSendingInvoice(false);
+      if (result.success) {
+        toast.success("Invoice WhatsApp berhasil dikirim.");
+      } else {
+        toast.error(result.error ?? "Gagal mengirim invoice.");
+      }
+    });
   }
 
   function handleUpdateSale() {
@@ -249,11 +274,32 @@ export function AccessoryHistorySellClient({
       </div>
 
       <Dialog open={detailSale !== null} onOpenChange={(open) => !open && setDetailSale(null)}>
-        <DialogContent className="w-fit! lg:min-w-lg">
+        <DialogContent >
           <DialogHeader>
-            <DialogTitle>
-              Detail Penjualan {detailSale ? `#${detailSale.id}` : ""}
-            </DialogTitle>
+            <div className="flex items-center justify-between mt-2 mr-6">
+              <DialogTitle>
+                Detail Penjualan {detailSale ? `#${detailSale.id}` : ""}
+              </DialogTitle>
+              {detailSale && (
+                <div className="flex items-center gap-2">
+                  {detailSale.customer?.phone && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => handleSendInvoice(detailSale.id)}
+                      disabled={isSendingInvoice}
+                    >
+                      <MessageSquare className="mr-1 h-4 w-4" />
+                      {isSendingInvoice ? "Mengirim..." : "Kirim Invoice WA"}
+                    </Button>
+                  )}
+                  <AccessoryReceiptPrintButton
+                    sale={detailSale}
+                    storeInformation={storeInformation}
+                  />
+                </div>
+              )}
+            </div>
           </DialogHeader>
           {detailSale && (
             <div className="space-y-4 w-full overflow-x-auto">

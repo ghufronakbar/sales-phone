@@ -157,7 +157,7 @@ export function ForgotPasswordForm() {
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleRequestOtp}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 my-4">
             {error && (
               <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {error}
@@ -202,7 +202,7 @@ export function ForgotPasswordForm() {
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleResetPassword}>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 my-4">
           {error && (
             <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}

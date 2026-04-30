@@ -79,7 +79,7 @@ export function AccessorySellForm({ accessories, customers, workers }: Props) {
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
   const [selectedWorkerId, setSelectedWorkerId] = useState("");
-  const [feeWorker, setFeeWorker] = useState("");
+  const [feeWorker, setFeeWorker] = useState("0");
 
   // Filtered accessories
   const filteredAccessories = accessories.filter((acc) =>
@@ -266,13 +266,12 @@ export function AccessorySellForm({ accessories, customers, workers }: Props) {
                       type="button"
                       disabled={isOutOfStock}
                       onClick={() => addToCart(acc)}
-                      className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors w-full ${
-                        isOutOfStock
+                      className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors w-full ${isOutOfStock
                           ? "opacity-40 cursor-not-allowed bg-muted"
                           : inCart
                             ? "border-primary bg-primary/5 hover:bg-primary/10"
                             : "hover:bg-muted/60 hover:border-muted-foreground/30"
-                      }`}
+                        }`}
                     >
                       <div className="relative h-12 w-12 shrink-0 rounded-md overflow-hidden border">
                         <Image
